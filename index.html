@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -59,15 +60,16 @@ header {
     position: fixed;
     inset: 0;
     background: rgba(0,0,0,0.4);
-    display: none;
+    display: flex;
     justify-content: center;
     align-items: center;
     opacity: 0;
+    pointer-events: none;
     transition: 0.3s;
 }
 .modal.show {
-    display: flex;
     opacity: 1;
+    pointer-events: auto;
 }
 
 .modal-content {
@@ -153,15 +155,11 @@ function save() {
 }
 
 function openModal() {
-    const modal = document.getElementById("modal");
-    modal.style.display = "flex";
-    setTimeout(() => modal.classList.add("show"), 10);
+    document.getElementById("modal").classList.add("show");
 }
 
 function closeModal() {
-    const modal = document.getElementById("modal");
-    modal.classList.remove("show");
-    setTimeout(() => modal.style.display = "none", 300);
+    document.getElementById("modal").classList.remove("show");
 }
 
 function addTask() {
@@ -194,6 +192,16 @@ function toggleComplete(i) {
 
 function deleteTask(i) {
     tasks.splice(i, 1);
+    save();
+    render();
+}
+
+/* ★ 未定→日付追加 */
+function setDate(i) {
+    const newDate = prompt("日付を入力（例: 2026-04-30）");
+    if (!newDate) return;
+
+    tasks[i].date = newDate;
     save();
     render();
 }
@@ -231,6 +239,9 @@ function render() {
             <b>${t.subject}</b><br>
             ${t.name}<br>
             締切: ${t.date ? t.date + "（あと" + diff + "日）" : "未定"}<br>
+
+            ${!t.date ? `<button onclick="setDate(${i})">日付追加</button>` : ""}
+
             <button class="delete" onclick="deleteTask(${i})">削除</button>
         `;
 
