@@ -1,4 +1,5 @@
-<!DOCTYPE html> 
+```html
+<!DOCTYPE html>
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
@@ -6,10 +7,7 @@
 
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#ff2d55">
-<title>宿題管理</title>
-</head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>宿題管理</title>
 
 <style>
@@ -18,12 +16,10 @@ body {
     font-family: -apple-system, BlinkMacSystemFont;
     background: #f2f2f7;
 }
-
 .app {
     max-width: 420px;
     margin: auto;
 }
-
 header {
     padding: 15px;
     font-size: 20px;
@@ -31,33 +27,19 @@ header {
     background: white;
     text-align: center;
 }
-
-/* タスクカード */
 .task {
     background: white;
     margin: 10px;
     padding: 12px;
     border-radius: 15px;
     box-shadow: 0 3px 8px rgba(0,0,0,0.08);
-    animation: fadeIn 0.4s;
 }
-
-/* 完了済み */
 .completed {
     opacity: 0.5;
     text-decoration: line-through;
 }
-
-/* 締切 */
 .danger { border-left: 6px solid #ff3b30; }
 .warn { border-left: 6px solid #ff9500; }
-
-@keyframes fadeIn {
-    from {opacity:0; transform: translateY(10px);}
-    to {opacity:1; transform: translateY(0);}
-}
-
-/* FAB */
 .fab {
     position: fixed;
     bottom: 20px;
@@ -70,8 +52,6 @@ header {
     font-size: 30px;
     border: none;
 }
-
-/* モーダル */
 .modal {
     position: fixed;
     inset: 0;
@@ -80,20 +60,17 @@ header {
     justify-content: center;
     align-items: center;
 }
-
 .modal-content {
     background: white;
     padding: 20px;
     border-radius: 15px;
     width: 80%;
 }
-
 input, select {
     width: 100%;
     margin: 5px 0;
     padding: 8px;
 }
-
 button {
     margin-top: 10px;
     padding: 10px;
@@ -103,7 +80,6 @@ button {
     background: #007aff;
     color: white;
 }
-
 .delete {
     background: #ccc;
 }
@@ -193,14 +169,12 @@ function render() {
 
     const today = new Date();
 
-    // ソート
     tasks.sort((a,b) => new Date(a.date) - new Date(b.date));
 
     tasks.forEach((t, i) => {
         const dl = new Date(t.date);
         const diff = Math.ceil((dl - today)/(1000*60*60*24));
 
-        // 完了済みで期限過ぎ → 非表示
         if (t.completed && diff < 0) return;
 
         const div = document.createElement("div");
@@ -223,12 +197,13 @@ function render() {
 }
 
 render();
+
+// Service Worker登録（PWA）
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./service-worker.js');
+}
 </script>
 
 </body>
-<script>
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./service-worker.js')
-}
-</script>
 </html>
+```
