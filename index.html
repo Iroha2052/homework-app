@@ -26,8 +26,6 @@ header {
     background: white;
     text-align: center;
 }
-
-
 .task {
     background: white;
     margin: 10px;
@@ -36,15 +34,12 @@ header {
     box-shadow: 0 3px 8px rgba(0,0,0,0.08);
     animation: slideUp 0.4s;
 }
-
 .completed {
     opacity: 0.5;
     text-decoration: line-through;
 }
-
 .danger { border-left: 6px solid #ff3b30; }
 .warn { border-left: 6px solid #ff9500; }
-
 
 .fab {
     position: fixed;
@@ -58,10 +53,7 @@ header {
     font-size: 30px;
     border: none;
 }
-.fab:active {
-    transform: scale(0.9);
-}
-
+.fab:active { transform: scale(0.9); }
 
 .modal {
     position: fixed;
@@ -106,20 +98,11 @@ button {
     color: white;
 }
 
-.delete {
-    background: #ccc;
-}
+.delete { background: #ccc; }
 
-/* アニメーション */
 @keyframes slideUp {
-    from {
-        transform: translateY(20px);
-        opacity: 0;
-    }
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
 }
 </style>
 </head>
@@ -153,6 +136,8 @@ button {
     </select>
 
     <input type="text" id="name" placeholder="宿題内容">
+
+    <label><input type="checkbox" id="noDate"> 締切未定</label>
     <input type="date" id="date">
 
     <button onclick="addTask()">追加</button>
@@ -170,27 +155,30 @@ function save() {
 function openModal() {
     const modal = document.getElementById("modal");
     modal.style.display = "flex";
-    setTimeout(() => {
-        modal.classList.add("show");
-    }, 10);
+    setTimeout(() => modal.classList.add("show"), 10);
 }
 
 function closeModal() {
     const modal = document.getElementById("modal");
     modal.classList.remove("show");
-    setTimeout(() => {
-        modal.style.display = "none";
-    }, 300);
+    setTimeout(() => modal.style.display = "none", 300);
 }
 
 function addTask() {
     const subject = document.getElementById("subject").value;
     const name = document.getElementById("name").value;
     const date = document.getElementById("date").value;
+    const noDate = document.getElementById("noDate").checked;
 
-    if (!name || !date) return alert("入力不足");
+    if (!name) return alert("宿題内容を入力");
 
-    tasks.push({subject, name, date, completed: false});
+    tasks.push({
+        subject,
+        name,
+        date: noDate ? null : date,
+        completed: false
+    });
+
     save();
     render();
     closeModal();
@@ -216,26 +204,33 @@ function render() {
 
     const today = new Date();
 
-    tasks.sort((a,b) => new Date(a.date) - new Date(b.date));
+    tasks.sort((a,b) => {
+        if (!a.date) return 1;
+        if (!b.date) return -1;
+        return new Date(a.date) - new Date(b.date);
+    });
 
     tasks.forEach((t, i) => {
-        const dl = new Date(t.date);
-        const diff = Math.ceil((dl - today)/(1000*60*60*24));
+        let diff = "";
+        if (t.date) {
+            const dl = new Date(t.date);
+            diff = Math.ceil((dl - today)/(1000*60*60*24));
+        }
 
-        if (t.completed && diff < 0) return;
+        if (t.completed && t.date && diff < 0) return;
 
         const div = document.createElement("div");
         div.className = "task";
 
         if (t.completed) div.classList.add("completed");
-        if (!t.completed && diff <= 0) div.classList.add("danger");
-        else if (!t.completed && diff <= 2) div.classList.add("warn");
+        if (t.date && !t.completed && diff <= 0) div.classList.add("danger");
+        else if (t.date && !t.completed && diff <= 2) div.classList.add("warn");
 
         div.innerHTML = `
             <input type="checkbox" ${t.completed ? "checked" : ""} onclick="toggleComplete(${i})">
             <b>${t.subject}</b><br>
             ${t.name}<br>
-            締切: ${t.date}（あと${diff}日）<br>
+            締切: ${t.date ? t.date + "（あと" + diff + "日）" : "未定"}<br>
             <button class="delete" onclick="deleteTask(${i})">削除</button>
         `;
 
@@ -245,11 +240,9 @@ function render() {
 
 render();
 
-
 document.getElementById("modal").addEventListener("click", function(e) {
     if (e.target === this) closeModal();
 });
-
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./service-worker.js');
