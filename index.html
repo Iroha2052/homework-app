@@ -1,9 +1,8 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#ff2d55">
@@ -11,48 +10,82 @@
 <title>宿題管理</title>
 
 <style>
+:root { --safe-bottom: env(safe-area-inset-bottom); }
+
 body {
     margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont;
+    font-family: -apple-system;
     background: #f2f2f7;
 }
+
 .app {
     max-width: 420px;
     margin: auto;
+    padding-bottom: calc(90px + var(--safe-bottom));
 }
+
 header {
-    padding: 15px;
-    font-size: 20px;
-    font-weight: bold;
+    padding: 16px;
+    font-size: 18px;
+    font-weight: 600;
     background: white;
     text-align: center;
+    position: sticky;
+    top: 0;
 }
+
+.section-title {
+    margin: 10px;
+    font-size: 14px;
+    color: #666;
+}
+
 .task {
     background: white;
     margin: 10px;
+    padding: 14px;
+    border-radius: 16px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    animation: slideUp 0.25s;
+}
+.completed { opacity: 0.5; text-decoration: line-through; }
+
+.danger { border-left: 5px solid #ff3b30; }
+.warn { border-left: 5px solid #ff9500; }
+
+input, select {
+    width: 100%;
+    margin: 8px 0;
     padding: 12px;
-    border-radius: 15px;
-    box-shadow: 0 3px 8px rgba(0,0,0,0.08);
-    animation: slideUp 0.4s;
+    font-size: 16px;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+    box-sizing: border-box;
 }
-.completed {
-    opacity: 0.5;
-    text-decoration: line-through;
+
+button {
+    min-height: 44px;
+    margin-top: 10px;
+    border-radius: 10px;
+    border: none;
+    background: #007aff;
+    color: white;
+    width: 100%;
 }
-.danger { border-left: 6px solid #ff3b30; }
-.warn { border-left: 6px solid #ff9500; }
+.delete { background: #ccc; }
 
 .fab {
     position: fixed;
-    bottom: 20px;
-    right: 20px;
-    width: 60px;
-    height: 60px;
+    right: 16px;
+    bottom: calc(16px + var(--safe-bottom));
+    width: 64px;
+    height: 64px;
     border-radius: 50%;
     background: #ff2d55;
     color: white;
-    font-size: 30px;
+    font-size: 32px;
     border: none;
+    z-index: 999;
 }
 .fab:active { transform: scale(0.9); }
 
@@ -60,51 +93,29 @@ header {
     position: fixed;
     inset: 0;
     background: rgba(0,0,0,0.4);
-    display: flex;
+    display: none;
     justify-content: center;
-    align-items: center;
-    opacity: 0;
-    pointer-events: none;
-    transition: 0.3s;
+    align-items: flex-end;
+    z-index: 1000;
 }
-.modal.show {
-    opacity: 1;
-    pointer-events: auto;
-}
+.modal.show { display: flex; }
 
 .modal-content {
+    width: 100%;
+    max-width: 420px;
     background: white;
+    border-radius: 20px 20px 0 0;
     padding: 20px;
-    border-radius: 15px;
-    width: 80%;
-    transform: scale(0.8);
-    transition: 0.3s;
+    animation: slideUpModal 0.25s;
 }
-.modal.show .modal-content {
-    transform: scale(1);
-}
-
-input, select {
-    width: 100%;
-    margin: 5px 0;
-    padding: 8px;
-}
-
-button {
-    margin-top: 10px;
-    padding: 10px;
-    width: 100%;
-    border-radius: 10px;
-    border: none;
-    background: #007aff;
-    color: white;
-}
-
-.delete { background: #ccc; }
 
 @keyframes slideUp {
-    from { transform: translateY(20px); opacity: 0; }
+    from { transform: translateY(10px); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
+}
+@keyframes slideUpModal {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
 }
 </style>
 </head>
@@ -113,150 +124,207 @@ button {
 
 <div class="app">
 <header>📚 宿題管理</header>
-<div id="list"></div>
+
+<div id="active"></div>
+
+<div class="section-title">完了＆期限切れ</div>
+<div id="done"></div>
 </div>
 
 <button class="fab" onclick="openModal()">＋</button>
 
 <div class="modal" id="modal">
-  <div class="modal-content">
-    <select id="subject">
-        <option>言語文化</option>
-        <option>現代の国語</option>
-        <option>数学P</option>
-        <option>数学Q</option>
-        <option>英語コミュニケーションI</option>
-        <option>英語論理表現I</option>
-        <option>英語LL（多読）</option>
-        <option>英語LL（ネイティブ）</option>
-        <option>化学基礎</option>
-        <option>生物基礎</option>
-        <option>物理基礎</option>
-        <option>歴史総合</option>
-        <option>公共</option>
-        <option>その他</option>
-    </select>
+<div class="modal-content">
+<select id="subject">
+<option>言語文化</option>
+<option>現代の国語</option>
+<option>数学P</option>
+<option>数学Q</option>
+<option>英語コミュニケーションI</option>
+<option>英語論理表現I</option>
+<option>英語LL（多読）</option>
+<option>英語LL（ネイティブ）</option>
+<option>化学基礎</option>
+<option>生物基礎</option>
+<option>物理基礎</option>
+<option>歴史総合</option>
+<option>公共</option>
+<option>その他</option>
+</select>
 
-    <input type="text" id="name" placeholder="宿題内容">
+<input type="text" id="name" placeholder="宿題内容">
 
-    <label><input type="checkbox" id="noDate"> 締切未定</label>
-    <input type="date" id="date">
+<label><input type="checkbox" id="noDate"> 締切未定</label>
+<input type="date" id="date">
 
-    <button onclick="addTask()">追加</button>
-    <button onclick="closeModal()" style="background:#ccc;">キャンセル</button>
-  </div>
+<!-- 繰り返し -->
+<select id="repeat">
+<option value="none">繰り返しなし</option>
+<option value="daily">毎日</option>
+<option value="weekly">毎週</option>
+</select>
+
+<select id="weekday">
+<option value="1">月曜</option>
+<option value="2">火曜</option>
+<option value="3">水曜</option>
+<option value="4">木曜</option>
+<option value="5">金曜</option>
+<option value="6">土曜</option>
+<option value="0">日曜</option>
+</select>
+
+<button onclick="addTask()">追加</button>
+<button onclick="closeModal()" style="background:#ccc;">キャンセル</button>
+</div>
 </div>
 
 <script>
 let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
 
-function save() {
+const subjectEl = document.getElementById("subject");
+const nameEl = document.getElementById("name");
+const dateEl = document.getElementById("date");
+const noDateEl = document.getElementById("noDate");
+const repeatEl = document.getElementById("repeat");
+const weekdayEl = document.getElementById("weekday");
+
+function save(){
     localStorage.setItem("tasks", JSON.stringify(tasks));
 }
 
-function openModal() {
-    document.getElementById("modal").classList.add("show");
-}
+function openModal(){ document.getElementById("modal").classList.add("show"); }
+function closeModal(){ document.getElementById("modal").classList.remove("show"); }
 
-function closeModal() {
-    document.getElementById("modal").classList.remove("show");
-}
-
-function addTask() {
-    const subject = document.getElementById("subject").value;
-    const name = document.getElementById("name").value;
-    const date = document.getElementById("date").value;
-    const noDate = document.getElementById("noDate").checked;
-
-    if (!name) return alert("宿題内容を入力");
+function addTask(){
+    if(!nameEl.value) return alert("入力してください");
 
     tasks.push({
-        subject,
-        name,
-        date: noDate ? null : date,
-        completed: false
+        id: Date.now(),
+        subject: subjectEl.value,
+        name: nameEl.value,
+        date: noDateEl.checked ? null : dateEl.value,
+        completed:false,
+        repeat: repeatEl.value,
+        weekday: repeatEl.value==="weekly" ? Number(weekdayEl.value) : null,
+        isTemplate: repeatEl.value!=="none"
     });
 
-    save();
-    render();
-    closeModal();
-
-    document.getElementById("name").value = "";
+    save(); render(); closeModal();
+    nameEl.value="";
 }
 
-function toggleComplete(i) {
-    tasks[i].completed = !tasks[i].completed;
-    save();
-    render();
+function toggleComplete(i){
+    const t = tasks[i];
+    t.completed = !t.completed;
+
+    // 繰り返しなら次を生成
+    if(t.completed && t.repeat !== "none"){
+        const nextDate = getNextDate(t);
+        const nextStr = formatDate(nextDate);
+
+        // 重複防止
+        if(!tasks.some(x => x.name===t.name && x.date===nextStr)){
+            tasks.push({
+                ...t,
+                id: Date.now()+Math.random(),
+                date: nextStr,
+                completed:false,
+                isTemplate:false
+            });
+        }
+    }
+
+    save(); render();
 }
 
-function deleteTask(i) {
-    tasks.splice(i, 1);
-    save();
-    render();
+function deleteTask(i){
+    tasks.splice(i,1);
+    save(); render();
 }
 
-/* ★ 未定→日付追加 */
-function setDate(i) {
-    const newDate = prompt("日付を入力（例: 2026-04-30）");
-    if (!newDate) return;
-
-    tasks[i].date = newDate;
-    save();
-    render();
+function setDate(i){
+    const d = prompt("例: 2026-04-30");
+    if(!d) return;
+    tasks[i].date = d;
+    save(); render();
 }
 
-function render() {
-    const list = document.getElementById("list");
-    list.innerHTML = "";
+function getNextDate(t){
+    const d = new Date();
+
+    if(t.repeat==="daily"){
+        d.setDate(d.getDate()+1);
+    } else if(t.repeat==="weekly"){
+        let diff = t.weekday - d.getDay();
+        if(diff<=0) diff+=7;
+        d.setDate(d.getDate()+diff);
+    }
+
+    return d;
+}
+
+function formatDate(d){
+    return d.toISOString().split("T")[0];
+}
+
+function render(){
+    const active = document.getElementById("active");
+    const done = document.getElementById("done");
+
+    active.innerHTML="";
+    done.innerHTML="";
 
     const today = new Date();
 
-    tasks.sort((a,b) => {
-        if (!a.date) return 1;
-        if (!b.date) return -1;
-        return new Date(a.date) - new Date(b.date);
+    tasks.sort((a,b)=>{
+        if(!a.date) return 1;
+        if(!b.date) return -1;
+        return new Date(a.date)-new Date(b.date);
     });
 
-    tasks.forEach((t, i) => {
-        let diff = "";
-        if (t.date) {
-            const dl = new Date(t.date);
-            diff = Math.ceil((dl - today)/(1000*60*60*24));
+    tasks.forEach((t,i)=>{
+        let diff=null;
+
+        if(t.date){
+            const dl=new Date(t.date);
+            diff=Math.ceil((dl-today)/(1000*60*60*24));
         }
 
-        if (t.completed && t.date && diff < 0) return;
+        if(t.date && diff < -7) return;
 
-        const div = document.createElement("div");
-        div.className = "task";
+        const div=document.createElement("div");
+        div.className="task";
 
-        if (t.completed) div.classList.add("completed");
-        if (t.date && !t.completed && diff <= 0) div.classList.add("danger");
-        else if (t.date && !t.completed && diff <= 2) div.classList.add("warn");
+        if(t.completed) div.classList.add("completed");
+        if(t.date && !t.completed && diff<=0) div.classList.add("danger");
+        else if(t.date && !t.completed && diff<=2) div.classList.add("warn");
 
-        div.innerHTML = `
-            <input type="checkbox" ${t.completed ? "checked" : ""} onclick="toggleComplete(${i})">
+        div.innerHTML=`
+            <input type="checkbox" ${t.completed?"checked":""} onclick="toggleComplete(${i})">
             <b>${t.subject}</b><br>
             ${t.name}<br>
-            締切: ${t.date ? t.date + "（あと" + diff + "日）" : "未定"}<br>
-
+            締切: ${t.date ? t.date+"（あと"+diff+"日）" : "未定"}<br>
             ${!t.date ? `<button onclick="setDate(${i})">日付追加</button>` : ""}
-
             <button class="delete" onclick="deleteTask(${i})">削除</button>
         `;
 
-        list.appendChild(div);
+        if(t.completed && t.date && diff < 0){
+            done.appendChild(div);
+        } else {
+            active.appendChild(div);
+        }
     });
 }
 
 render();
 
-document.getElementById("modal").addEventListener("click", function(e) {
-    if (e.target === this) closeModal();
+document.getElementById("modal").addEventListener("click", e=>{
+    if(e.target.id==="modal") closeModal();
 });
 
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./service-worker.js');
+    navigator.serviceWorker.register('./service-worker.js');
 }
 </script>
 
